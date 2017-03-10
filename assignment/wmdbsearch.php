@@ -3,6 +3,7 @@
     <meta charset="utf-8">
     <title>WMDB Search></title>
     <link rel='stylesheet' type='text/css' href="styles.css">
+    <!-- ********************** BOOTSTRAP *********************** -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
 	  integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
   </head>
@@ -17,7 +18,7 @@
   </style>
   <body>
 
-	<!-- Want to fix this because it doesn't shrink with page. Meh. -->
+	<!-- form at the top of the page -->
 	<div class='container'>
 	  <form action='#' method='get' class='row'>
 	    <select class="form-control offset-sm-2 col-sm-1" name='type'>
@@ -28,12 +29,6 @@
 	    <input type="text" class="form-control col-sm-6" name='sought'>
 	    <button type="submit" class="btn btn-primary col-sm-1">Submit</button>
 	  </form>
-	  <div class='row' id='singleresult'>
-	    <div class='offset-lg-3 col-lg-6'>
-	      <h4 id='name_or_title'></h4>
-	      <h6 id='date'></h6>
-	    </div>
-	  </div>
 	</div>
 
 <?php
@@ -43,7 +38,7 @@
 
 	$dbh = db_connect($mngo_mhejmadi_dsn);
 
-	#------------------ PREPARED QUERY TEMPLATES -----------------
+	//------------------ PREPARED QUERY TEMPLATES -----------------
 
 	// awaits a partial name - returns name, birthday of all matches
 	$sql_name = "SELECT distinct name,birthdate,nm from person  
@@ -85,16 +80,20 @@
 						 where movie.tt=?
 						 and movie.tt=credit.tt
 						 and person.nm=credit.nm;";
+	
+	//------------------ END PREPARED QUERY TEMPLATES -----------------
 
 
+	// global variables will be populated depending on the request that comes in
 	$nm = isset($_REQUEST['nm']) ? $_REQUEST['nm']: -1;
 	$tt = isset($_REQUEST['tt']) ? $_REQUEST['tt']: -1;
 	$type = isset($_REQUEST['type']) ? $_REQUEST['type']: -1;
 	$request = isset($_REQUEST['sought']) ? $_REQUEST['sought']: -1;
 	$self = $_SERVER['PHP_SELF'];
 
-   //----------------- FUNCTIONS -----------------
+    //----------------- FUNCTIONS -----------------
 
+	// php function for echo-ing all of the names matched by a user search
 	function write_name_several($resultset) {
 		global $self, $request;
 	      echo "Here are the people that match \"$request\":\n<ul>";
@@ -104,6 +103,8 @@
 	    echo "</ul>\n";
 	}
 
+	// php function for echo-ing detailed information from a single person
+	// based on a hyperlink that was clicked, providing an id for that person (nm)
 	function write_name_single($resultset) {
 		global $dbh, $self, $sql_name_movies, $nm, $tt;
  		echo "<div class = \"single_entry\">";
@@ -120,6 +121,7 @@
 		echo "</ul></div>";
 	}
 
+	// php function for echo-ing all of the titles matched by a user search
 	function write_title_several($resultset) {
 		global $self, $request;
 	    echo "Here are the movies that match \"$request\":\n<ul>";
@@ -130,6 +132,8 @@
 	    echo "</ul>\n";
 	}
 
+	// php function for echo-ing detailed information for a particular movie
+	// based on a hyperlink clicked which provided an id for that movie (tt)
 	function write_title_single($resultset) {
 		global $dbh, $self, $sql_title_actors, $sql_title_director, $nm, $tt;
 
@@ -138,12 +142,13 @@
 		    echo "<h3>${row['title']}  (${row['release']}) </h3>";
 		}
 
+		// display director
 		$director = prepared_query($dbh,$sql_title_director,array($tt));
 		while ($row = $director->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<h6>directed by: ${row['name']}</h6>";
 		}
 
-
+		// display hyperlinks for all actors that database says acted in that movie
 		$actors = prepared_query($dbh,$sql_title_actors,array($tt));
 		echo "<h5>Cast:</h5><ul> ";
 	    while($row = $actors->fetchRow(MDB2_FETCHMODE_ASSOC)) {
@@ -152,6 +157,7 @@
 		echo "</ul></div>";
 	}
 
+	// php function to just return the count of matches for a particular query
 	function get_count($sql_count) {
 		global $dbh, $request;
 		$counter = prepared_query($dbh, $sql_count, array($request));
@@ -161,16 +167,19 @@
 		}
 		return $count;
 	}
-	# ------------------------ END FUNCTIONS -------------------------
+	// ------------------------ END FUNCTIONS -------------------------
 
 
 
-	# ------------------------- LOGIC TREE ----------------------------
+	// ------------------------- LOGIC TREE ----------------------------
+	
+	// FIRST: User-inputted form
 	if ($type != -1) {
 
         $both_name_count = 0;
         $both_title_count = 0;
 
+        // display all name matches if user selected name or both
 	    if ($type == 'name' or $type == 'both') {
 		    $resultset_name = prepared_query($dbh,$sql_name,array($request));
 		    $count_name = get_count($sql_name_count);
@@ -188,6 +197,7 @@
 		    }
 	    }
 
+	    // display all title matches if user selected title or both
 	    if ($type == 'title' or $type == 'both') {
 		    $resultset_title = prepared_query($dbh,$sql_title,array($request));
 		    $count_title = get_count($sql_title_count);
@@ -207,21 +217,30 @@
 	    	}
 	    }
 
+	    // if no results
 	    if ($type == 'both'and $count_name == 0 and $count_title == 0) {
                     echo "<h2>Literally nothing matched \"$request\" :(</h2>";
 		} 
-	} else if ($tt != -1) {
+	} 
+
+	// SECOND: if user clicks on a hyperlink of a movie
+	else if ($tt != -1) {
 		// print "searching titles";
 		$resultset_title = prepared_query($dbh,$sql_single_title,array($tt));
 		write_title_single($resultset_title);
-	} else if ($nm != -1) {
+	} 
+
+	// THIRD: if user clicks on a hyperlink of a person (actor or director)
+	else if ($nm != -1) {
 		// print "searching names";
 		$resultset_name = prepared_query($dbh,$sql_single_name, array($nm));
 		write_name_single($resultset_name);
 	}
+
 	?>
 
 	</body>
+	<!--- **************** BOOTSTRAP ******************* -->
 	<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
 	integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
 	crossorigin="anonymous"></script>
