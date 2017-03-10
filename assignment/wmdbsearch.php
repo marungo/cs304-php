@@ -3,7 +3,7 @@
 		<meta charset="utf-8">
 		<title>WMDB Search></title>
 		<link rel='stylesheet' type='text/css' href='css/wmdb-search.css'>
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" 
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
 		integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
 	</head>
 	<style>
@@ -44,24 +44,24 @@
 
 	#------------------ PREPARED QUERY TEMPLATES -----------------
 
-	$sql_name = "SELECT distinct name,birthdate from person  
+	$sql_name = "SELECT distinct name,birthdate from person
 				 where person.name like concat('%',?,'%');";
 
 	$sql_name_movies = "SELECT distinct title from person,credit,movie
-						where person.name like concat('%',?,'%') 
+						where person.name like concat('%',?,'%')
 						and person.nm=credit.nm and credit.tt=movie.tt;";
 
-	$sql_name_count = "SELECT distinct count(*) from person  
+	$sql_name_count = "SELECT distinct count(*) from person
 				 	   where person.name like concat('%',?,'%');";
 
 	$sql_title = "SELECT distinct title,`release`,name from
 				  movie,person
-				  where movie.title like concat('%',?,'%') 
+				  where movie.title like concat('%',?,'%')
 				  and movie.director=person.nm;";
 
 	$sql_title_count = "SELECT distinct count(*) from
 				  movie,person as director
-				  where movie.title like concat('%',?,'%') 
+				  where movie.title like concat('%',?,'%')
 				  and movie.director=director.nm;";
 
 	$sql_title_actors = "SELECT distinct name from
@@ -70,18 +70,9 @@
 			  and movie.tt=credit.tt
 			  and person.nm=credit.nm;";
 
-
-
-	try {
-		$type = $_REQUEST['type'];
-		$request = $_REQUEST['sought'];
-	} catch(Exception $e) {
-		$type = -1;
-		$request = -1;
-	}
-
-
 	$self = $_SERVER['PHP_SELF'];
+	$type = isset($_REQUEST['type']) ? $_REQUEST['type']: -1;
+	$request = isset($_REQUEST['sought']) ? $_REQUEST['sought']: -1;
 
 	//----------------- FUNCTIONS -----------------
 	function write_name_several($resultset) {
@@ -102,7 +93,7 @@
 	    echo "<ul>Filmography: ";
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<li>${row['title']}";
-	    }	
+	    }
 	}
 
 	function write_title_several($resultset) {
@@ -155,7 +146,7 @@
 		 	} else if ($type != 'both') {
 		 		echo "No names match $request :(";
 		 	}
-		}  
+		}
 
 		if ($type == 'title' or $type == 'both') {
 			$resultset_title = prepared_query($dbh,$sql_title,array($request));
@@ -170,7 +161,7 @@
 			} else if ($type != 'both') {
 				echo "No movies match $request :(";
 			}
-		}	
+		}
 
 		if ($type == 'both' and $count_name == 0 and $count_title == 0) {
 			echo "<h2>Literally nothing matched $request :(</h2>";
@@ -223,19 +214,19 @@
 	// }
 	// The resultset object has a fetchRow method that can give us back the
 	// next row of the resultset, stored in an associative array with
-	// keys named for the columns we asked for (nm,name). 
+	// keys named for the columns we asked for (nm,name).
 
 	?>
 	</ol>
 
 	</body>
-	<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" 
-	integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" 
+	<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
+	integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
 	crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" 
-	integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" 
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
+	integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
 	crossorigin="anonymous"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" 
-	integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" 
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+	integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
 	crossorigin="anonymous"></script>
 </html>
