@@ -10,10 +10,6 @@
 		.row {
 			margin-top: 10px;
 		}
-
-		li {
-
-		}
 	</style>
 	<body>
 
@@ -27,12 +23,12 @@
 		    <input type="text" class="form-control col-sm-6" name='sought'>
 		    <button type="submit" class="btn btn-primary col-sm-1">Submit</button>
 		</form>
-		<div class='row' id='singleresult'>
+<!-- 		<div class='row' id='singleresult'>
 			<div class='offset-lg-3 col-lg-6'>
 				<h4 id='name_or_title'></h4>
 				<h6 id='date'></h6>
 			</div>
-		</div>
+		</div> -->
 	</div>
 
 	<?php
@@ -44,56 +40,64 @@
 
 	#------------------ PREPARED QUERY TEMPLATES -----------------
 
-	$sql_name = "SELECT distinct name,birthdate from person  
+	// awaits a partial name - returns name, birthday of all matches
+	$sql_name = "SELECT distinct name,birthdate,nm from person  
 				 where person.name like concat('%',?,'%');";
 
-	$sql_name_movies = "SELECT distinct title from person,credit,movie
-						where person.name like concat('%',?,'%') 
-						and person.nm=credit.nm and credit.tt=movie.tt;";
+	// awaits a name id: nm - returns the name and birthdate of that person.
+	$sql_single_name = "SELECT name,birthdate from person
+						where person.nm=?;";
 
+	// awaits a name id: nm - returns names of movies from particular
+	$sql_name_movies = "SELECT distinct title from person,credit,movie
+						where person.nm=? 
+						and person.nm=credit.nm 
+						and credit.tt=movie.tt;";
+
+	// awaits a partial name - returns number of matches
 	$sql_name_count = "SELECT distinct count(*) from person  
 				 	   where person.name like concat('%',?,'%');";
 
-	$sql_title = "SELECT distinct title,`release`,name from
-				  movie,person
-				  where movie.title like concat('%',?,'%') 
-				  and movie.director=person.nm;";
+	// awaits a partial movie title - returns movies (title and release date)
+	$sql_title = "SELECT distinct title,`release`,tt from movie
+				  where movie.title like concat('%',?,'%');";
+	
+	// awaits a movie id: tt - returns the title, release dat
+	$sql_single_title = "SELECT title, `release` from
+					movie where movie.tt=?;";
 
-	$sql_title_count = "SELECT distinct count(*) from
-				  movie,person as director
-				  where movie.title like concat('%',?,'%') 
-				  and movie.director=director.nm;";
+	// awaits a partial movie title - returns the number of movies that match
+	$sql_title_count = "SELECT distinct count(*) from movie
+				  where movie.title like concat('%',?,'%');";
 
-	$sql_title_actors = "SELECT distinct name from
-			  movie,credit,person
-			  where movie.title like concat('%',?,'%')
-			  and movie.tt=credit.tt
-			  and person.nm=credit.nm;";
+	// awaits a movie id: tt - returns the director of that movie
+	$sql_title_director = "SELECT name from movie,person
+						where movie.tt=? movie.director=person.nm;";
 
+	// awaits a movie id: tt - returns the actors in that movie
+	$sql_title_actors = "SELECT distinct name,birthdate from
+						 movie,credit,person
+						 where movie.tt=?
+						 and movie.tt=credit.tt
+						 and person.nm=credit.nm;";
 
-
-	try {
-		$type = $_REQUEST['type'];
-		$request = $_REQUEST['sought'];
-	} catch(Exception $e) {
-		$type = -1;
-		$request = -1;
-	}
-
-
+	$type = $_REQUEST['type'];
+	$request = $_REQUEST['sought'];
+	$nm = $_REQUEST['nm'];
+	$tt = $_REQUEST['tt'];
 	$self = $_SERVER['PHP_SELF'];
 
 	//----------------- FUNCTIONS -----------------
 	function write_name_several($resultset) {
 		global $self;
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
-		    echo "<li><a href='$self?type=name&sought=${row['name']}'>${row['name']}  ${row['birthdate']}</a>";
+		    echo "<li><a href='$self?nm=${row['nm']}'>${row['name']}  ${row['birthdate']}</a>";
 		}
 	}
 
 	function write_name_single($resultset) {
 		global $dbh, $sql_name_movies;
- 		$movies = prepared_query($dbh,$sql_name_movies,array($_REQUEST['sought']));
+ 		$movies = prepared_query($dbh,$sql_name_movies,array($_REQUEST['nm']));
  		//make fancier later
  		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<h3>${row['name']} \n was born on ${row['birthdate']}</h3>";
@@ -108,13 +112,13 @@
 	function write_title_several($resultset) {
 		global $self;
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
-		    echo "\t<li><a href='$self?type=title&sought=${row['title']}'>${row['title']}  (${row['release']})</a>\n";
+		    echo "\t<li><a href='$self?tt=${row['tt']}'>${row['title']}  (${row['release']})</a>\n";
 		 }
 	}
 
 	function write_title_single($resultset) {
 		global $dbh, $sql_title_actors;
-		$actors = prepared_query($dbh,$sql_title_actors,array($_REQUEST['sought']));
+		$actors = prepared_query($dbh,$sql_title_actors,array($_REQUEST['tt']));
 
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<h3>${row['title']}  (${row['release']}) </h3>";
