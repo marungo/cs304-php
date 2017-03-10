@@ -8,8 +8,9 @@
 	  integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
   </head>
   <body>
-
 	<!-- form at the top of the page -->
+	<h1>WMDB Search</h1>
+	<br><br>
 	<div class='container'>
 	  <form action='#' method='get' class='row'>
 	    <select class="form-control offset-sm-2 col-sm-1" name='tables'>
@@ -52,7 +53,7 @@
 						where person.nm=?;";
 
 	// given nm - returns names of movies from particular actor
-	$sql_single_name_movies = "SELECT title,movie.tt as tt from person,credit,movie
+	$sql_single_name_movies = "SELECT title,`release`,movie.tt as tt from person,credit,movie
 						where person.nm=?
 						and person.nm=credit.nm 
 						and credit.tt=movie.tt;";
@@ -127,7 +128,7 @@
  		$movies = prepared_query($dbh,$sql_single_name_movies,array($nm));
 	    echo "<h5>Filmography:</h5><ul> ";
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
-	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']}</a>";
+	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']} (${row['release']})</a>";
 	    }
 	    // echo "</ul></div>";
 	}
@@ -154,11 +155,10 @@
 		    echo "<h3>${row['title']}  (${row['release']}) </h3>";
 			display_director_of_movie();
 			display_actors_of_movie();
-			echo "<p><i>Here is the real <a href='www.imdb.com/title/tt$tt'
+			echo "<br><br><p><i>Here is the real <a href='www.imdb.com/title/tt$tt'
 	        >IMDB entry for ${row['title']}</a>.</i></p>";
 		}
 		echo "</ul></div>";
-
 	}
 
 	function display_director_of_movie() {
