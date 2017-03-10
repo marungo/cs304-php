@@ -26,7 +26,7 @@
 
 	require_once("/home/cs304/public_html/php/DB-functions.php");
 	require_once('mngo_mhejmadi_dsn.inc');
-	
+
 	// global variables
 	$dbh = db_connect($mngo_mhejmadi_dsn);
 	$self = $_SERVER['PHP_SELF'];
@@ -40,25 +40,17 @@
 
 	//------------------ PREPARED QUERY TEMPLATES -----------------
 
-	// given user search - returns name, birthday of all matches
-	$sql_several_names = "SELECT distinct name,birthdate,nm from person  
-				 where person.name like concat('%',?,'%');";
-
 	// given nm - returns the name and birthdate of that person.
 	$sql_single_name = "SELECT name,birthdate,nm from person
 						where person.nm=?;";
 
-	// given nm - returns names of movies from particular actor
+	// given nm - returns names of movies of particular actor
 	$sql_single_name_movies = "SELECT title,movie.tt as tt from person,credit,movie
 						where person.nm=?
-						and person.nm=credit.nm 
+						and person.nm=credit.nm
 						and credit.tt=movie.tt;";
 
-	// given user search - returns movies (title and release date)
-	$sql_several_titles = "SELECT distinct title,`release`,tt from movie
-				  where movie.title like concat('%',?,'%');";
-	
-	// given tt - returns the title, release dat
+  // given tt - returns the title, release dat
 	$sql_single_title = "SELECT title,`release`,tt from
 						movie where movie.tt=?;";
 
@@ -73,14 +65,22 @@
 						 and movie.tt=credit.tt
 						 and person.nm=credit.nm;";
 
+   // given user search - returns name, birthday of all matches
+   $sql_several_names = "SELECT distinct name,birthdate,nm from person
+          where person.name like concat('%',?,'%');";
+
+	// given user search - returns movies (title and release date)
+	$sql_several_titles = "SELECT distinct title,`release`,tt from movie
+				  where movie.title like concat('%',?,'%');";
+	
 	// given user search - returns the number of movies that match
 	$sql_title_count = "SELECT distinct count(*) from movie
 				  where movie.title like concat('%',?,'%');";
 
 	// given user search - returns number of matches
-	$sql_name_count = "SELECT distinct count(*) from person  
+	$sql_name_count = "SELECT distinct count(*) from person
 				 	   where person.name like concat('%',?,'%');";
-	
+
 	//------------------ END PREPARED QUERY TEMPLATES -----------------
 
     //----------------- FUNCTIONS -----------------
@@ -174,7 +174,7 @@
 	}
 
 	// ------------------------ END FUNCTIONS -------------------------
-	
+
 	// FIRST: User-inputted form
 	if ($type != -1) {
 
@@ -220,15 +220,15 @@
 	    // if no results
 	    if ($type == 'both'and $count_name == 0 and $count_title == 0) {
                     echo "<h2>Literally nothing matched \"$request\" :(</h2>";
-		} 
-	} 
+		}
+	}
 
 	// SECOND: if user clicks on a hyperlink of a movie
 	else if ($tt != -1) {
 		// print "searching titles";
 		$resultset_title = prepared_query($dbh,$sql_single_title,array($tt));
 		display_single_movie($resultset_title);
-	} 
+	}
 
 	// THIRD: if user clicks on a hyperlink of a person (actor or director)
 	else if ($nm != -1) {
