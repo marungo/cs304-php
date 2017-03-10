@@ -26,8 +26,17 @@
 
 	require_once("/home/cs304/public_html/php/DB-functions.php");
 	require_once('mngo_mhejmadi_dsn.inc');
-
+	
+	// global variables
 	$dbh = db_connect($mngo_mhejmadi_dsn);
+	$self = $_SERVER['PHP_SELF'];
+
+	// these will be populated depending on the request that comes in
+	$nm = isset($_REQUEST['nm']) ? $_REQUEST['nm']: -1;
+	$tt = isset($_REQUEST['tt']) ? $_REQUEST['tt']: -1;
+	$type = isset($_REQUEST['type']) ? $_REQUEST['type']: -1;
+	$request = isset($_REQUEST['sought']) ? $_REQUEST['sought']: -1;
+
 
 	//------------------ PREPARED QUERY TEMPLATES -----------------
 
@@ -74,18 +83,10 @@
 	
 	//------------------ END PREPARED QUERY TEMPLATES -----------------
 
-
-	// global variables will be populated depending on the request that comes in
-	$nm = isset($_REQUEST['nm']) ? $_REQUEST['nm']: -1;
-	$tt = isset($_REQUEST['tt']) ? $_REQUEST['tt']: -1;
-	$type = isset($_REQUEST['type']) ? $_REQUEST['type']: -1;
-	$request = isset($_REQUEST['sought']) ? $_REQUEST['sought']: -1;
-	$self = $_SERVER['PHP_SELF'];
-
     //----------------- FUNCTIONS -----------------
 
 	// php function for echo-ing all of the names matched by a user search
-	function write_name_several($resultset) {
+	function display_all_names($resultset) {
 		global $self, $request;
 	      echo "Here are the people that match \"$request\":\n<ul>";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
@@ -96,14 +97,17 @@
 
 	// php function for echo-ing detailed information from a single person
 	// based on a hyperlink that was clicked, providing an id for that person (nm)
-	function write_name_single($resultset) {
+	function display_single_name($resultset) {
 		global $dbh, $self, $sql_name_movies, $nm, $tt;
  		echo "<div class = \"single_entry\">";
  		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<h3>${row['name']} \n was born on ${row['birthdate']}</h3>";
 	    }
+	    display_filmography_of_actor();
+	}
 
-	    // query for all of that actor's filmography
+	function display_filmography_of_actor() {
+		global $dbh, $sql_name_movies, $nm;
  		$movies = prepared_query($dbh,$sql_name_movies,array($nm));
 	    echo "<h5>Filmography:</h5><ul> ";
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
@@ -113,7 +117,7 @@
 	}
 
 	// php function for echo-ing all of the titles matched by a user search
-	function write_title_several($resultset) {
+	function display_all_movies($resultset) {
 		global $self, $request;
 	    echo "Here are the movies that match \"$request\":\n<ul>";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
@@ -125,20 +129,28 @@
 
 	// php function for echo-ing detailed information for a particular movie
 	// based on a hyperlink clicked which provided an id for that movie (tt)
-	function write_title_single($resultset) {
+	function display_single_movie($resultset) {
 		global $dbh, $self, $sql_title_actors, $sql_title_director, $nm, $tt;
 
 		echo "<div class = \"single_entry\">";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<h3>${row['title']}  (${row['release']}) </h3>";
 		}
+		display_director_of_movie();
+		display_actors_of_movie();
+	}
 
+	function display_director_of_movie() {
+		global $dbh,$sql_title_director, $tt;
 		// display director
 		$director = prepared_query($dbh,$sql_title_director,array($tt));
 		while ($row = $director->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<h6>directed by: ${row['name']}</h6>";
 		}
+	}
 
+	function display_actors_of_movie() {
+		global $dbh, $sql_title_actors, $tt;
 		// display hyperlinks for all actors that database says acted in that movie
 		$actors = prepared_query($dbh,$sql_title_actors,array($tt));
 		echo "<h5>Cast:</h5><ul> ";
@@ -159,10 +171,6 @@
 		return $count;
 	}
 	// ------------------------ END FUNCTIONS -------------------------
-
-
-
-	// ------------------------- LOGIC TREE ----------------------------
 	
 	// FIRST: User-inputted form
 	if ($type != -1) {
@@ -175,12 +183,12 @@
 		    $count_name = get_count($sql_name_count);
 
 		    if ($count_name > 1) {
-		      write_name_several($resultset_name);
+		      display_all_names($resultset_name);
 	 	    } else if ($count_name == 1) {
 	               if ($type != 'both') {
-	                   write_name_single($resultset_name);
+	                   display_single_name($resultset_name);
 	               } else {
-	                   write_name_several($resultset_name);
+	                   display_all_names($resultset_name);
 	               }
 		    } else if ($type != 'both') {
 		    echo "No names match \"$request\" :(";
@@ -193,13 +201,13 @@
 
 		    if ($count_title > 1) {
 
-		    write_title_several($resultset_title);
+		    display_all_movies($resultset_title);
 
 		    } else if ($count_title == 1) {
 	                if ($type != 'both') {
-	                   write_title_single($resultset_title);
+	                   display_single_movie($resultset_title);
 	               } else {
-	                   write_title_single($resultset_title);
+	                   display_single_movie($resultset_title);
 	               }
 		    } else if ($type != 'both') {
 		    echo "No movies match \"$request\" :(";
@@ -216,14 +224,14 @@
 	else if ($tt != -1) {
 		// print "searching titles";
 		$resultset_title = prepared_query($dbh,$sql_single_title,array($tt));
-		write_title_single($resultset_title);
+		display_single_movie($resultset_title);
 	} 
 
 	// THIRD: if user clicks on a hyperlink of a person (actor or director)
 	else if ($nm != -1) {
 		// print "searching names";
 		$resultset_name = prepared_query($dbh,$sql_single_name, array($nm));
-		write_name_single($resultset_name);
+		display_single_name($resultset_name);
 	}
 
 	?>
