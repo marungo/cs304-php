@@ -125,7 +125,7 @@
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']} (${row['release']})</a>";
 	    }
-		echo "</ul></div>";
+		echo "</ul>";
 	}
 
 	// php function for echo-ing all of the titles matched by a user search
@@ -148,9 +148,12 @@
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 			$tt = $row['tt'];
 		    echo "<h3>${row['title']}  (${row['release']}) </h3>";
+    		display_director_of_movie();
+    		display_actors_of_movie();
+        echo "<p><i>Here is the real <a href='www.imdb.com/title/tt$tt'
+        >IMDB entry for ${row['title']}</a>.</i></p>";
 		}
-		display_director_of_movie();
-		display_actors_of_movie();
+    echo "</div>";
 	}
 
 	function display_director_of_movie() {
@@ -170,8 +173,9 @@
 	    while($row = $actors->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<li><a href='$self?nm=${row['nm']}'>${row['name']}</a>";
 	    }
-		echo "</ul></div>";
+		echo "</ul>";
 	}
+
 
 	// ------------------------ END FUNCTIONS -------------------------
 
