@@ -31,12 +31,15 @@
 	$dbh = db_connect($mngo_mhejmadi_dsn);
 	$self = $_SERVER['PHP_SELF'];
 
-	// these will be populated depending on the request that comes in
-	$nm = isset($_REQUEST['nm']) ? $_REQUEST['nm']: -1;
-	$tt = isset($_REQUEST['tt']) ? $_REQUEST['tt']: -1;
-	$type = isset($_REQUEST['tables']) ? $_REQUEST['tables']: -1;
-	$request = isset($_REQUEST['sought']) ? $_REQUEST['sought']: -1;
+	// make case insensitive
+	$request = array_change_key_case($_REQUEST, CASE_LOWER);
 
+	// these will be populated depending on the request that comes in
+	// be wary of XSS attacks - escape all possibly malicious user-inputted.
+	$nm = isset($request['nm']) ? strtolower(htmlspecialchars($request['nm'])): -1;
+	$tt = isset($request['tt']) ? strtolower(htmlspecialchars($request['tt'])): -1;
+	$type = isset($request['tables']) ? strtolower(htmlspecialchars($request['tables'])): -1;
+	$sought = isset($request['sought']) ? strtolower(htmlspecialchars($request['sought'])): -1;
 
 	//------------------ PREPARED QUERY TEMPLATES -----------------
 
@@ -86,8 +89,8 @@
     //----------------- FUNCTIONS -----------------
 	// php function to just return the count of matches for a particular query
 	function get_count($sql_count) {
-		global $dbh, $request;
-		$counter = prepared_query($dbh, $sql_count, array($request));
+		global $dbh, $sought;
+		$counter = prepared_query($dbh, $sql_count, array($sought));
 		$count = 0;
 		while ($row = $counter->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 			$count = $row['count(*)'];
@@ -97,8 +100,8 @@
 
 	// php function for echo-ing all of the names matched by a user search
 	function display_all_names($resultset) {
-		global $self, $request;
-	      echo "Here are the people that match \"$request\":\n<ul>";
+		global $self, $sought;
+	      echo "Here are the people that match \"$sought\":\n<ul>";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<li class = \"multi_entries\"><a href='$self?nm=${row['nm']}'>${row['name']}  ${row['birthdate']}</a>";
 		}
@@ -114,8 +117,9 @@
  		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
  			$nm = $row['nm'];
 	    	echo "<h3>${row['name']}</h3> \n <h6>born on ${row['birthdate']}</h6>";
+	    	display_filmography_of_single_name();
+	    	echo "<br><br><p><i>Here is the real <a href='http://www.imdb.com/name/nm$nm'>IMDB entry for ${row['name']}</a></i></p>";
 	    }
-	    display_filmography_of_single_name();
 	}
 
 	function display_filmography_of_single_name() {
@@ -125,13 +129,13 @@
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']}</a>";
 	    }
-		echo "</ul></div>";
+	    // echo "</ul></div>";
 	}
 
 	// php function for echo-ing all of the titles matched by a user search
 	function display_all_movies($resultset) {
-		global $self, $request;
-	    echo "Here are the movies that match \"$request\":\n<ul>";
+		global $self, $sought;
+	    echo "Here are the movies that match \"$sought\":\n<ul>";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    // echo "\t<li><a href='$self?tt=${row['tt']}'>${row['title']}  (${row['release']})</a>\n";
 		    echo "<li class = \"multi_entries\"><a href='$self?tt=${row['tt']}'>${row['title']}  (${row['release']})</a>";
@@ -182,7 +186,7 @@
         $both_title_count = 0;
 
 	    if ($type == 'names' or $type == 'both') {
-		    $resultset_name = prepared_query($dbh,$sql_several_names,array($request));
+		    $resultset_name = prepared_query($dbh,$sql_several_names,array($sought));
 		    $count_name = get_count($sql_name_count);
 
 		    if ($count_name > 1) {
@@ -194,12 +198,12 @@
 	                   display_all_names($resultset_name);
 	               }
 		    } else if ($type != 'both') {
-		    echo "No names match \"$request\" :(";
+		    echo "No names match \"$sought\" :(";
 		    }
 	    }
 
 	    if ($type == 'titles' or $type == 'both') {
-		    $resultset_titles = prepared_query($dbh,$sql_several_titles,array($request));
+		    $resultset_titles = prepared_query($dbh,$sql_several_titles,array($sought));
 		    $count_title = get_count($sql_title_count);
 
 		    if ($count_title > 1) {
@@ -213,13 +217,13 @@
 						display_all_movies($resultset_titles);
 	                }
 		    } else if ($type != 'both') {
-		    echo "No movies match \"$request\" :(";
+		    echo "No movies match \"$sought\" :(";
 	    	}
 	    }
 
 	    // if no results
 	    if ($type == 'both'and $count_name == 0 and $count_title == 0) {
-                    echo "<h2>Literally nothing matched \"$request\" :(</h2>";
+            echo "<h2>Literally nothing matched \"$sought\" :(</h2>";
 		} 
 	} 
 
