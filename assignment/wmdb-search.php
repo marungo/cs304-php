@@ -45,7 +45,7 @@
 						where person.nm=?;";
 
 	// given nm - returns names of movies of particular actor
-	$sql_single_name_movies = "SELECT title,movie.tt as tt from person,credit,movie
+	$sql_single_name_movies = "SELECT title, `release`, movie.tt as tt from person,credit,movie
 						where person.nm=?
 						and person.nm=credit.nm
 						and credit.tt=movie.tt;";
@@ -72,7 +72,7 @@
 	// given user search - returns movies (title and release date)
 	$sql_several_titles = "SELECT distinct title,`release`,tt from movie
 				  where movie.title like concat('%',?,'%');";
-	
+
 	// given user search - returns the number of movies that match
 	$sql_title_count = "SELECT distinct count(*) from movie
 				  where movie.title like concat('%',?,'%');";
@@ -123,7 +123,7 @@
  		$movies = prepared_query($dbh,$sql_single_name_movies,array($nm));
 	    echo "<h5>Filmography:</h5><ul> ";
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
-	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']}</a>";
+	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']} (${row['release']})</a>";
 	    }
 		echo "</ul></div>";
 	}
