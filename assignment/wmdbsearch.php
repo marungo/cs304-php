@@ -53,10 +53,9 @@
 	$sql_single_name = "SELECT name,birthdate from person
 						where person.nm=?;";
 
-	// awaits a name id: nm - returns names of movies from particular
-	$sql_name_movies = "SELECT distinct title from person,credit,movie
-<<<<<<< HEAD
-						where person.nm=? 
+	// awaits a name id: nm - returns names of movies from particular actor
+	$sql_name_movies = "SELECT title,movie.tt as tt from person,credit,movie
+						where person.nm=?
 						and person.nm=credit.nm 
 						and credit.tt=movie.tt;";
 
@@ -70,7 +69,7 @@
 	
 	// awaits a movie id: tt - returns the title, release dat
 	$sql_single_title = "SELECT title, `release` from
-					movie where movie.tt=?;";
+						movie where movie.tt=?;";
 
 	// awaits a partial movie title - returns the number of movies that match
 	$sql_title_count = "SELECT distinct count(*) from movie
@@ -78,10 +77,10 @@
 
 	// awaits a movie id: tt - returns the director of that movie
 	$sql_title_director = "SELECT name from movie,person
-						where movie.tt=? movie.director=person.nm;";
+						where movie.tt=? and movie.director=person.nm;";
 
 	// awaits a movie id: tt - returns the actors in that movie
-	$sql_title_actors = "SELECT distinct name,birthdate from
+	$sql_title_actors = "SELECT distinct name,birthdate,person.nm as nm from
 						 movie,credit,person
 						 where movie.tt=?
 						 and movie.tt=credit.tt
@@ -100,18 +99,20 @@
 		global $self, $request;
 	      echo "Here are the people that match \"$request\":\n<ul>";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
-		    echo "<li><a href='$self?nm=${row['nm']}'>${row['name']}  ${row['birthdate']}</a>";
+		    echo "<li class = \"multi_entries\"><a href='$self?nm=${row['nm']}'>${row['name']}  ${row['birthdate']}</a>";
 		}
 	    echo "</ul>\n";
 	}
 
 	function write_name_single($resultset) {
-		global $dbh, $self, $sql_name_movies;
- 		$movies = prepared_query($dbh,$sql_name_movies,array($_REQUEST['sought']));
+		global $dbh, $self, $sql_name_movies, $nm, $tt;
  		echo "<div class = \"single_entry\">";
  		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<h3>${row['name']} \n was born on ${row['birthdate']}</h3>";
 	    }
+
+	    // query for all of that actor's filmography
+ 		$movies = prepared_query($dbh,$sql_name_movies,array($nm));
 	    echo "<h5>Filmography:</h5><ul> ";
 	    while($row = $movies->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 	    	echo "<li><a href='$self?tt=${row['tt']}'>${row['title']}</a>";
@@ -124,22 +125,29 @@
 	    echo "Here are the movies that match \"$request\":\n<ul>";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    // echo "\t<li><a href='$self?tt=${row['tt']}'>${row['title']}  (${row['release']})</a>\n";
-		    echo "\t<li class = \"multi_entries\"><a href='$self?tt=${row['tt']}'>${row['title']}  (${row['release']})</a>\n";
+		    echo "<li class = \"multi_entries\"><a href='$self?tt=${row['tt']}'>${row['title']}  (${row['release']})</a>";
 		 }
 	    echo "</ul>\n";
 	}
 
 	function write_title_single($resultset) {
-		global $dbh, $sql_title_actors;
-		$actors = prepared_query($dbh,$sql_title_actors,array($_REQUEST['tt']));
+		global $dbh, $self, $sql_title_actors, $sql_title_director, $nm, $tt;
+
 		echo "<div class = \"single_entry\">";
 		while($row = $resultset->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<h3>${row['title']}  (${row['release']}) </h3>";
+		}
+
+		$director = prepared_query($dbh,$sql_title_director,array($tt));
+		while ($row = $director->fetchRow(MDB2_FETCHMODE_ASSOC)) {
 		    echo "<h6>directed by: ${row['name']}</h6>";
 		}
+
+
+		$actors = prepared_query($dbh,$sql_title_actors,array($tt));
 		echo "<h5>Cast:</h5><ul> ";
 	    while($row = $actors->fetchRow(MDB2_FETCHMODE_ASSOC)) {
-	    	echo "<li><a href='$self?type=name&sought=${row['name']}'>${row['name']}</a>";
+	    	echo "<li><a href='$self?nm=${row['nm']}'>${row['name']}</a>";
 	    }
 		echo "</ul></div>";
 	}
@@ -159,48 +167,58 @@
 
 	# ------------------------- LOGIC TREE ----------------------------
 	if ($type != -1) {
-          $both_name_count = 0;
-          $both_title_count = 0;
-	  if ($type == 'name' or $type == 'both') {
-	    $resultset_name = prepared_query($dbh,$sql_name,array(concat('%',$request,'%')));
-	    $count_name = get_count($sql_name_count);
 
-	    if ($count_name > 1) {
-	      write_name_several($resultset_name);
- 	    } else if ($count_name == 1) {
-               if ($type != 'both') {
-                   write_name_single($resultset_name);
-               } else {
-                   write_name_several($resultset_name);
-               }
-	    } else if ($type != 'both') {
-	    echo "No names match \"$request\" :(";
-	    }
+        $both_name_count = 0;
+        $both_title_count = 0;
+
+	    if ($type == 'name' or $type == 'both') {
+		    $resultset_name = prepared_query($dbh,$sql_name,array($request));
+		    $count_name = get_count($sql_name_count);
+
+		    if ($count_name > 1) {
+		      write_name_several($resultset_name);
+	 	    } else if ($count_name == 1) {
+	               if ($type != 'both') {
+	                   write_name_single($resultset_name);
+	               } else {
+	                   write_name_several($resultset_name);
+	               }
+		    } else if ($type != 'both') {
+		    echo "No names match \"$request\" :(";
+		    }
 	    }
 
 	    if ($type == 'title' or $type == 'both') {
-	    $resultset_title = prepared_query($dbh,$sql_title,array($request));
-	    $count_title = get_count($sql_title_count);
+		    $resultset_title = prepared_query($dbh,$sql_title,array($request));
+		    $count_title = get_count($sql_title_count);
 
-	    if ($count_title > 1) {
+		    if ($count_title > 1) {
 
-	    write_title_several($resultset_title);
+		    write_title_several($resultset_title);
 
-	    } else if ($count_title == 1) {
-                if ($type != 'both') {
-                   write_title_single($resultset_title);
-               } else {
-                   write_title_single($resultset_title);
-               }
-	    } else if ($type != 'both') {
-	    echo "No movies match \"$request\" :(";
-	    }
+		    } else if ($count_title == 1) {
+	                if ($type != 'both') {
+	                   write_title_single($resultset_title);
+	               } else {
+	                   write_title_single($resultset_title);
+	               }
+		    } else if ($type != 'both') {
+		    echo "No movies match \"$request\" :(";
+	    	}
 	    }
 
 	    if ($type == 'both'and $count_name == 0 and $count_title == 0) {
                     echo "<h2>Literally nothing matched \"$request\" :(</h2>";
-	    }
-	    }
+		} 
+	} else if ($tt != -1) {
+		// print "searching titles";
+		$resultset_title = prepared_query($dbh,$sql_single_title,array($tt));
+		write_title_single($resultset_title);
+	} else if ($nm != -1) {
+		// print "searching names";
+		$resultset_name = prepared_query($dbh,$sql_single_name, array($nm));
+		write_name_single($resultset_name);
+	}
 	?>
 
 	</body>

@@ -3,18 +3,29 @@ Meera Hejmadi, MR Ngo
 */
 
 body {
-  padding: 5%;
+  padding-left: 5%;
+  
 }
 
 body ul {
-  list-style: none;
+  
 }
 
 .multi_entries {
-  color: blue;
+    width: 60%;
+    padding: 0.5em; 
+}
 
+.single_entry ul {
+    list-style:none;
+    padding-left: 0.25em;
 }
 
 .single_entry {
-
+    align-items:center;
+    align-text:center;
+    border: 2px solid purple;
+    width: 60%;
+    margin: 2em auto;
+    padding: 2em;
 }
