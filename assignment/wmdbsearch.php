@@ -31,41 +31,41 @@
 
 	//------------------ PREPARED QUERY TEMPLATES -----------------
 
-	// awaits a partial name - returns name, birthday of all matches
+	// given user search - returns name, birthday of all matches
 	$sql_name = "SELECT distinct name,birthdate,nm from person  
 				 where person.name like concat('%',?,'%');";
 
-	// awaits a name id: nm - returns the name and birthdate of that person.
+	// given nm - returns the name and birthdate of that person.
 	$sql_single_name = "SELECT name,birthdate from person
 						where person.nm=?;";
 
-	// awaits a name id: nm - returns names of movies from particular actor
+	// given nm - returns names of movies from particular actor
 	$sql_name_movies = "SELECT title,movie.tt as tt from person,credit,movie
 						where person.nm=?
 						and person.nm=credit.nm 
 						and credit.tt=movie.tt;";
 
-	// awaits a partial name - returns number of matches
+	// given user search - returns number of matches
 	$sql_name_count = "SELECT distinct count(*) from person  
 				 	   where person.name like concat('%',?,'%');";
 
-	// awaits a partial movie title - returns movies (title and release date)
+	// given user search - returns movies (title and release date)
 	$sql_title = "SELECT distinct title,`release`,tt from movie
 				  where movie.title like concat('%',?,'%');";
 	
-	// awaits a movie id: tt - returns the title, release dat
+	// given tt - returns the title, release dat
 	$sql_single_title = "SELECT title, `release` from
 						movie where movie.tt=?;";
 
-	// awaits a partial movie title - returns the number of movies that match
+	// given user search - returns the number of movies that match
 	$sql_title_count = "SELECT distinct count(*) from movie
 				  where movie.title like concat('%',?,'%');";
 
-	// awaits a movie id: tt - returns the director of that movie
+	// given tt - returns the director of that movie
 	$sql_title_director = "SELECT name from movie,person
 						where movie.tt=? and movie.director=person.nm;";
 
-	// awaits a movie id: tt - returns the actors in that movie
+	// given tt - returns the actors in that movie
 	$sql_title_actors = "SELECT distinct name,birthdate,person.nm as nm from
 						 movie,credit,person
 						 where movie.tt=?
@@ -170,7 +170,6 @@
         $both_name_count = 0;
         $both_title_count = 0;
 
-        // display all name matches if user selected name or both
 	    if ($type == 'name' or $type == 'both') {
 		    $resultset_name = prepared_query($dbh,$sql_name,array($request));
 		    $count_name = get_count($sql_name_count);
@@ -188,7 +187,6 @@
 		    }
 	    }
 
-	    // display all title matches if user selected title or both
 	    if ($type == 'title' or $type == 'both') {
 		    $resultset_title = prepared_query($dbh,$sql_title,array($request));
 		    $count_title = get_count($sql_title_count);
