@@ -2,13 +2,13 @@
 Meera Hejmadi, MR Ngo
 */
 
+
 body {
   padding-left: 5%;
-  
 }
 
-body ul {
-  
+.row {
+	margin-top: 10px;
 }
 
 .multi_entries {
